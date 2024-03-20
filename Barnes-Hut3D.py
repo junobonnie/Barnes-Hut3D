@@ -49,12 +49,14 @@ class World(World):
         self.gravity = gravity
             
 class Simulator(Simulator):
-    def __init__(self, dt, world, render):
+    def __init__(self, dt, world, render, grid_size = 50):
         self.dt = dt
         self.world = world
         self.render = render
         self.count_screen = 0
         self.count_snapshot = 0
+        self.grid_size = grid_size        
+        self.grid = None
         
     # Function to build the Barnes-Hut tree
     def build_tree(self, atoms, x, y, z, region_size):
@@ -63,7 +65,8 @@ class Simulator(Simulator):
     
         if len(atoms) == 1:
             # draw cube
-            draw_cube = True #False
+            draw_cube = False
+            #draw_cube = True
             if draw_cube:
                 self.render.cube(Vector(x, y, z), region_size, region_size, region_size, (255,0,0))
             return atoms[0]
@@ -158,7 +161,7 @@ if __name__ == '__main__':
     depth = 1000
     
     screen = pg.display.set_mode((width, height))
-    render = Render(screen, width, height, depth, m.pi/4, m.pi/4, 0)
+    render = Render(screen, width, height, depth, (0, 0, 0), (0, 0, 0))
     clock = pg.time.Clock()
 
     black = pg.Color('black')
@@ -168,7 +171,7 @@ if __name__ == '__main__':
     blue = pg.Color('blue')
 
     e1 = Element(name = 'Helium', mass = 10, radius = 3, color = blue)
-    e2 = Element(name = 'Uranium', mass = 10, radius = 3, color = red)
+    e2 = Element(name = 'Uranium', mass = 10, radius = 3, color = blue)
    
     # atom1 = Atom(e1, Vector(-200, 0), Vector(50, 0))
     # atom2 = Atom(e1, Vector(0, 0))
@@ -182,16 +185,15 @@ if __name__ == '__main__':
     
     import random as r
     import math as m
-    phi = m.pi/2+0.4
-    for i in range(500):
+    for i in range(5000):
         theta = r.random()*2*m.pi
-        rV = SO2_z(theta).dot(Vector(r.randrange(0, 200, 2*e1.radius) ,0, theta)) - 0*Vector(250, 0, 0)
-        atoms.append(Atom(e1, SO2_x(phi).dot(rV), SO2_x(phi).dot(abs((rV + 0*Vector(250, 0, 0))/200)*10*3*SO2_z(theta).dot(Vector(0, 20, 0)))))
+        rV = SO3_x(m.pi/2*(1.2)).dot(SO3_z(theta).dot(Vector(r.randrange(0, 200, 2*e1.radius) ,0 , -10*r.random()))) - Vector(250, 0, 0)
+        atoms.append(Atom(e1, rV, abs((rV + Vector(250, 0, 0))/200)*10*3*SO3_z(theta).dot(Vector(0, 20, 0)) + Vector(250, 0, 0)))
     
-    # for i in range(10000):
-    #     theta = r.random()*2*m.pi
-    #     rV = SO2(theta).dot(Vector(r.randrange(0, 200, 2*e2.radius) ,0)) + Vector(250, 0)
-    #     atoms.append(Atom(e2, rV, abs((rV - Vector(250, 0))/200)*10*3*SO2(theta).dot(Vector(0, 30))))
+    for i in range(5000):
+        theta = r.random()*2*m.pi
+        rV = SO3_x(m.pi/2*(0.8)).dot(SO3_z(theta).dot(Vector(r.randrange(0, 200, 2*e2.radius) ,0 , -10*r.random()))) + Vector(250, 0, 0)
+        atoms.append(Atom(e2, rV, abs((rV - Vector(250, 0, 0))/200)*10*3*SO3_z(theta).dot(Vector(0, 20, 0)) - Vector(250, 0, 0)))
         
     recursive_safety(atoms)
     
@@ -209,8 +211,9 @@ if __name__ == '__main__':
 
     while True:
         t = simulator.clock()
+        simulator.render.update_time(t)
         simulator.draw_background(white)
-        simulator.draw_grid(100)
+        #simulator.draw_grid(200)
         simulator.main()
         # simulator.atom_wall_collision()
         # simulator.atom_atom_collision()
@@ -250,10 +253,10 @@ if __name__ == '__main__':
         pg.display.update()
         
         # you need 'images/Barnes_Hut_demo_1' directory path
-        #simulator.save_screen('images/Barnes_Hut_demo_1')
+        simulator.save_screen('images/Barnes_Hut3D')
         #simulator.save_snapshot('snapshots/Barnes_Hut3D_demo_1')
         
-        if t > 10:
+        if t > 20:
             break
         
     if DEBUG:      
